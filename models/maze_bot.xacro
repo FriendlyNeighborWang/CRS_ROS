@@ -1,0 +1,258 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="yahboomcar">
+
+  <!-- Include the original URDF content (simplified/inline for this example since we can't easily include a raw URDF) -->
+  <!-- We are copying the essential parts of MicroROS.urdf and adding Gazebo plugins -->
+  
+  <link name="base_footprint"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.0038187037800903 -0.000532399212617988 -0.00668209865413972" rpy="0 0 0" />
+      <mass value="0.222555109690442" />
+      <inertia ixx="0.000160582675692647" ixy="-8.18530574494391E-07" ixz="-2.74575507729664E-06" iyy="0.000176217109527607" iyz="1.64721285063183E-07" izz="0.000302441932451338" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="file:///home/yahboom/yahboomcar_ws/install/yahboomcar_description/share/yahboomcar_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="file:///home/yahboom/yahboomcar_ws/install/yahboomcar_description/share/yahboomcar_description/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Wheels -->
+  <xacro:macro name="wheel" params="name x y z axis_y">
+    <link name="${name}_Link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="0.0141" />
+        <inertia ixx="2.66e-06" ixy="0" ixz="0" iyy="4.68e-06" iyz="0" izz="2.66e-06" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="file:///home/yahboom/yahboomcar_ws/install/yahboomcar_description/share/yahboomcar_description/meshes/${name}_Link.STL" />
+        </geometry>
+        <material name="grey">
+          <color rgba="0.6 0.6 0.6 1" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="0.04" radius="0.032"/>
+        </geometry>
+      </collision>
+    </link>
+    <joint name="${name}_Joint" type="continuous">
+      <origin xyz="${x} ${y} ${z}" rpy="0 0 0" />
+      <parent link="base_link" />
+      <child link="${name}_Link" />
+      <axis xyz="0 ${axis_y} 0" />
+      <limit effort="100" velocity="100"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:wheel name="zq" x="0.0455" y="0.0675" z="-0.02125" axis_y="1"/>
+  <xacro:wheel name="yq" x="0.0455" y="-0.0675" z="-0.02125" axis_y="1"/>
+  <xacro:wheel name="yh" x="-0.0495" y="-0.0675" z="-0.02125" axis_y="1"/>
+  <xacro:wheel name="zh" x="-0.0495" y="0.0675" z="-0.02125" axis_y="1"/>
+
+  <!-- Friction settings for wheels -->
+  <!-- Front wheels (zq, yq) -->
+  <gazebo reference="zq_Link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+  <gazebo reference="yq_Link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+  <!-- Rear wheels (zh, yh) keep standard friction for traction -->
+  <gazebo reference="zh_Link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+  <gazebo reference="yh_Link">
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+
+  <!-- Sensors -->
+  <link name="imu_Link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.01" />
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="file:///home/yahboom/yahboomcar_ws/install/yahboomcar_description/share/yahboomcar_description/meshes/imu_Link.STL" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="imu_Joint" type="fixed">
+    <origin xyz="-0.002999 -0.0030001 0.031701" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="imu_Link" />
+  </joint>
+
+  <link name="radar_Link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.038" />
+      <inertia ixx="8.8e-6" ixy="0" ixz="0" iyy="1.4e-5" iyz="0" izz="2.2e-5" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="file:///home/yahboom/yahboomcar_ws/install/yahboomcar_description/share/yahboomcar_description/meshes/radar_Link.STL" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="radar_Joint" type="fixed">
+    <origin xyz="0 0 0.078933557468359" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="radar_Link" />
+  </joint>
+
+  <!-- Gazebo Plugins -->
+  
+  <!-- Diff Drive Plugin (Rear Wheels) -->
+  <gazebo>
+    <plugin name="diff_drive_rear" filename="libgazebo_ros_diff_drive.so">
+      <ros>
+        <namespace>/</namespace>
+      </ros>
+      <left_joint>zh_Joint</left_joint>
+      <right_joint>yh_Joint</right_joint>
+      <wheel_separation>0.135</wheel_separation>
+      <wheel_diameter>0.065</wheel_diameter>
+      <max_wheel_torque>10</max_wheel_torque>
+      <max_wheel_acceleration>1.0</max_wheel_acceleration>
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+    </plugin>
+  </gazebo>
+
+  <!-- Diff Drive Plugin (Front Wheels) - Added for 4WD Simulation -->
+  <gazebo>
+    <plugin name="diff_drive_front" filename="libgazebo_ros_diff_drive.so">
+      <ros>
+        <namespace>/</namespace>
+      </ros>
+      <left_joint>zq_Joint</left_joint>
+      <right_joint>yq_Joint</right_joint>
+      <wheel_separation>0.135</wheel_separation>
+      <wheel_diameter>0.065</wheel_diameter>
+      <max_wheel_torque>10</max_wheel_torque>
+      <max_wheel_acceleration>1.0</max_wheel_acceleration>
+      <publish_odom>false</publish_odom> <!-- Only one plugin should publish odom -->
+      <publish_odom_tf>false</publish_odom_tf>
+      <publish_wheel_tf>false</publish_wheel_tf>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+    </plugin>
+  </gazebo>
+
+  <!-- Joint State Publisher Plugin -->
+  <gazebo>
+    <plugin name="joint_state_publisher" filename="libgazebo_ros_joint_state_publisher.so">
+      <ros>
+        <remapping>~/out:=/joint_states</remapping>
+      </ros>
+      <update_rate>30</update_rate>
+      <joint_name>zq_Joint</joint_name>
+      <joint_name>yq_Joint</joint_name>
+      <joint_name>zh_Joint</joint_name>
+      <joint_name>yh_Joint</joint_name>
+    </plugin>
+  </gazebo>
+
+  <!-- Laser Plugin -->
+  <gazebo reference="radar_Link">
+    <sensor name="lidar" type="ray">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1.000000</resolution>
+            <min_angle>0.000000</min_angle>
+            <max_angle>6.280000</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.120000</min>
+          <max>8.0</max>
+          <resolution>0.015000</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="scan" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <remapping>~/out:=scan</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>radar_Link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- IMU Plugin -->
+  <gazebo reference="imu_Link">
+    <gravity>true</gravity>
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>__default_topic__</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>imu</topicName>
+        <bodyName>imu_Link</bodyName>
+        <updateRateHZ>10.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>imu_Link</frameName>
+        <initialOrientationAsReference>false</initialOrientationAsReference>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+
+</robot>
