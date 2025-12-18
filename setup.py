@@ -29,6 +29,7 @@ setup(
         'console_scripts': [
             'mission_commander = maze_bot_sim.mission_commander:main',
             'debug_stage2 = maze_bot_sim.debug_stage2:main',
+            'manual_nav_stage2 = maze_bot_sim.manual_nav_stage2:main',
         ],
     },
 )
